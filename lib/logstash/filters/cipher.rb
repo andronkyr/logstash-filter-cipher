@@ -98,7 +98,22 @@ class LogStash::Filters::Cipher < LogStash::Filters::Base
   # For AES algorithms you can set this to a 16
   # [source,ruby]
   #     filter { cipher { iv_random_length => 16 }}
-  config :iv_random_length, :validate => :number, :required => true
+  config :iv_random_length, :validate => :number
+
+
+
+  # Force an non-random IV to be used per encryption.
+  # This IV will be prepended to the
+  # encrypted result bytes and then base64 encoded. 
+  # Random IV's are better than statically
+  # hardcoded IVs
+  #
+  # For AES algorithms you can set this to a 16
+  # [source,ruby]
+  #     filter { cipher { iv => "abcdefghijklmnop" }}
+  config :iv, :validate => :string, :required => true
+
+
 
   # If this is set the internal Cipher instance will be
   # re-used up to @max_cipher_reuse times before being
@@ -160,7 +175,9 @@ class LogStash::Filters::Cipher < LogStash::Filters::Base
   # @return [String]: ciphertext
   def do_encrypt(plaintext)
     with_cipher do |cipher|
-      random_iv = OpenSSL::Random.random_bytes(@iv_random_length)
+    # random_iv = OpenSSL::Random.random_bytes(@iv_random_length)
+      random_iv = @iv
+      
       cipher.iv = random_iv
 
       ciphertext = random_iv + cipher.update(plaintext) + cipher.final
